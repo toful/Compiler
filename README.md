@@ -54,7 +54,7 @@ $ make clean
 
 Sentences can be such **arithmetic expressions**:
 
-    They be formed by int, float or string literals, identifiers, parenthesis, the string concatenation operator (+), and the other arithmetic operators.
+They be formed by int, float or string literals, identifiers, parenthesis, the string concatenation operator (+), and the other arithmetic operators.
 
     ```
     i * (x + i) - i / 4.0
@@ -64,7 +64,7 @@ Sentences can be such **arithmetic expressions**:
 
 or **assignations** (id := expression):
 
-    In an assignation, the identifier type is the same as the expression result type.
+In an assignation, the identifier type is the same as the expression result type.
 
     ```
     z := i * (x + i) - i / 4.0
