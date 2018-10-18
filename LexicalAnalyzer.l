@@ -90,6 +90,8 @@ SEPARATOR	";"
 {LINE}              {   printf("\n");
                         return LINE; }
 
+{SPACE}             {}
+
 %%
 
 int init_lexic_analysis ( char * file_name ){

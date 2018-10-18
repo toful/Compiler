@@ -17,7 +17,7 @@ EYACC = SyntacticAnalyzer.y
 SRCY = SyntacticAnalyzer.c
 
 OBJ = LexicalAnalyzer.o SyntacticAnalyzer.o compiler.o
-SRC = compiler.c symtab/symtab.c
+SRC = compiler.c symtab/symtab.c operations.c
 
 BIN = compiler
 
