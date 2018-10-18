@@ -1,6 +1,7 @@
 # Compiler
 
 Simple compiler carried out during the Compilers subject in the URV Computer Science degree.
+
 This first version generates a simple calculator that can do some simple operations
 
 ## Pre-requisites
@@ -30,15 +31,15 @@ $ make run
 ```
 $ make clean
 ```
-##Documentation
+## Documentation
 
-###Types
+### Types
 
 * **INTEGERS**   ```x := 10```
 * **REALS**      ```x := 1.500```
 * **STRINGS**    ```x := "hola"```
 
-###Operations
+### Operations
 
 * ```+``` Add
 * ```-``` Substract
@@ -49,17 +50,22 @@ $ make clean
 * ```sqrt``` Square Root
 
 
-###Sentences
+### Sentences
 
 Sentences can be such **arithmetic expressions**:
-    They be formed by int, float or string literals, identifiers, parenthesis, the string concatenation operator (+), and the other arithmetic operators. 
+
+    They be formed by int, float or string literals, identifiers, parenthesis, the string concatenation operator (+), and the other arithmetic operators.
+
     ```
     i * (x + i) - i / 4.0
     17 + (3 * 1.0)
     s + (s + i) + x 
     ```
+
 or **assignations** (id := expression):
+
     In an assignation, the identifier type is the same as the expression result type.
+
     ```
     z := i * (x + i) - i / 4.0
     s := "Hola"
@@ -72,16 +78,16 @@ or **assignations** (id := expression):
 * If a string is concatenated (+) with a number, the result has string type.
 * All the identifiers that apear in an expression, need to be initialized.
 
-###Error treatment
+### Error treatment
 
-It have beed considered the following errors:
+It have been considered the following errors:
 * It is checked that the expressions type is correct before doing any arithmetic operation.
 * If an identifier is used in an expression, is checked if it has been initialized.
 * When an assignation is carried out, if it was initialized before, it is checked if the identifier and the expression have the same type.
 
 If any of this errors happen, an error message ( with error kind and the line ) will be send and the program will finish.
 
-###Example
+### Example
 
 Here there is an example file:
 ```
