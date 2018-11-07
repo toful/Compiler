@@ -1,0 +1,86 @@
+/*######################################################################
+#                           Compiladors
+#                        Cristòfol Daudén Esmel
+#                            Benchmark
+######################################################################*/
+calc off
+
+//Checking the SWITCH statement
+switch 1 + 3 begin
+    case 0 :
+        x := 0
+    case 0 :
+        y := 5.1
+    case 0 :
+        z := "hola"
+    case 0 :
+        w := 5 + 4.6 + "hi"
+    default :
+        "default"
+end
+
+//Checking the while statement
+while 5 > 2 or true do
+    a := true
+    b := false
+done
+
+//Cheking all if statements
+if not false then
+    "stranger"
+    c := "things"
+    d := (12 > 15) and false or 3 > 2
+fi
+
+if not false then
+    "stranger"
+else
+    "things"
+fi
+
+if not false then
+    "stranger"
+elsif true then
+    "things"
+elsif false then
+    "for"
+elsif 4 > 3 then
+    "everyone"
+else
+    "of us"
+fi
+
+//checking the repeat statement
+repeat
+    2 + 3
+    3.3 + 2
+    3.4 + "hi"
+until not 5 < 3
+
+//checking the for statement 
+for e in 1..20 do
+    "say hello!"
+done
+
+//Complex example
+
+for i in 1..20 do
+    j := 0
+    while j < i do
+        l := j mod 4
+        switch l begin
+            case 0 :
+                "say hello!"
+            case 1 :
+                "say goodby!"
+            case 2 :
+                "say how are you"
+            default :
+                "say nothing"
+        end
+        j := j + 1
+    done
+    if i = 10 then
+        "say we are in the middle"
+    fi
+done

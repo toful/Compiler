@@ -25,7 +25,7 @@ LFLAGS = -n -o $*.c
 YFLAGS = -d -v -o $*.c
 CFLAGS = -ansi -Wall -g
 
-OTHERS = SyntacticAnalyzer.output SyntacticAnalyzer.h ./output/*
+OTHERS = SyntacticAnalyzer.output SyntacticAnalyzer.h ./output/* ./output
 ######################################################################
 all : 	$(SRCL) $(SRCY)
 		$(CC) -o $(BIN) $(CFLAGS) $(SRCL) $(SRCY) $(SRC) $(LIB)
@@ -37,10 +37,11 @@ $(SRCY) : 	$(EYACC)
 			$(YACC) $(YFLAGS) $<
 
 clean :
-		rm -f $(BIN) $(OBJ) $(SRCL) $(SRCY) $(OTHERS)
+		rm -rf $(BIN) $(OBJ) $(SRCL) $(SRCY) $(OTHERS)
 
 
 run : clean all
+	mkdir output
 	for filename in ./input/*.txt; do \
 		file=$$(basename $$filename); \
 		echo "\nRunning "$$filename; \

@@ -7,6 +7,8 @@
 #include "./operations.h"
 extern void yyerror( const char* );
 
+/*Arithmetic operations*/
+
 int add_op( variable *result, variable x, variable y ){
 
     printf("Entering into the add function.\n");
@@ -243,6 +245,143 @@ int sqrt_op( variable *result, variable x ){
     return 0;
 }
 
+/*Logig operations*/
+int or_op( variable *result, variable x, variable y ){
+    printf("Entering into the OR logical operation function.\n");
+    if( x.type == BOOLEAN && y.type == BOOLEAN ){
+        result->type = BOOLEAN;
+        result->intValue = x.intValue || y.intValue;
+        return 0;
+    }
+    return 1;
+}
+
+int and_op( variable *result, variable x, variable y ){
+    printf("Entering into the AND logical operation function.\n");
+    if( x.type == BOOLEAN && y.type == BOOLEAN ){
+        result->type = BOOLEAN;
+        result->intValue = x.intValue && y.intValue;
+        return 0;
+    }
+    return 1;
+}
+
+int not_op( variable *result, variable x ){
+    printf("Entering into the NOT logical operation function.\n");
+    if( x.type == BOOLEAN ){
+        result->type = BOOLEAN;
+        result->intValue = !x.intValue ;
+        return 0;
+    }
+    return 1;
+}
+
+int relational_op( variable *result, relationalOperator relOp, variable x, variable y ){
+    printf("Entering into the relational operation function.\n");
+
+    if( x.type == REAL || y.type == REAL ){
+        result->type = BOOLEAN;
+
+        if( x.type == REAL && y.type == REAL ){
+            switch( relOp ){
+                case NE:
+                    result->intValue = x.floatValue != y.floatValue;
+                break;
+                case GE:
+                    result->intValue = x.floatValue >= y.floatValue;
+                break;
+                case GT:
+                    result->intValue = x.floatValue > y.floatValue;
+                break;
+                case LE:
+                    result->intValue = x.floatValue <= y.floatValue;
+                break;
+                case LT:
+                    result->intValue = x.floatValue < y.floatValue;
+                break;
+                case EQ:
+                    result->intValue = x.floatValue == y.floatValue;
+                break;
+            }
+        }
+        else if( x.type == REAL && y.type == INTEGER ){
+            switch( relOp ){
+                case NE:
+                    result->intValue = x.floatValue != y.intValue;
+                break;
+                case GE:
+                    result->intValue = x.floatValue >= y.intValue;
+                break;
+                case GT:
+                    result->intValue = x.floatValue > y.intValue;
+                break;
+                case LE:
+                    result->intValue = x.floatValue <= y.intValue;
+                break;
+                case LT:
+                    result->intValue = x.floatValue < y.intValue;
+                break;
+                case EQ:
+                    result->intValue = x.floatValue == y.intValue;
+                break;
+            }
+        }
+        else if( x.type == INTEGER && y.type == REAL ){
+            switch( relOp ){
+                case NE:
+                    result->intValue = x.intValue != y.floatValue;
+                break;
+                case GE:
+                    result->intValue = x.intValue >= y.floatValue;
+                break;
+                case GT:
+                    result->intValue = x.intValue > y.floatValue;
+                break;
+                case LE:
+                    result->intValue = x.intValue <= y.floatValue;
+                break;
+                case LT:
+                    result->intValue = x.intValue < y.floatValue;
+                break;
+                case EQ:
+                    result->intValue = x.intValue == y.floatValue;
+                break;
+            }
+        }
+        else yyerror( "SEMANTIC ERROR: substracting a FLOAT with something else" );
+
+        return 0;
+    }
+    else if( x.type == INTEGER && y.type == INTEGER ){
+        result->type = BOOLEAN;
+        switch( relOp ){
+                case NE:
+                    result->intValue = x.intValue != y.intValue;
+                break;
+                case GE:
+                    result->intValue = x.intValue >= y.intValue;
+                break;
+                case GT:
+                    result->intValue = x.intValue > y.intValue;
+                break;
+                case LE:
+                    result->intValue = x.intValue <= y.intValue;
+                break;
+                case LT:
+                    result->intValue = x.intValue < y.intValue;
+                break;
+                case EQ:
+                    result->intValue = x.intValue == y.intValue;
+                break;
+        }
+
+        return 0;
+    }
+    return 1;
+}
+
+/*Auxiliary functions*/
+
 char * typeToString( variableType type ){
     if( type == STRING ){
         return "STRING";
@@ -252,6 +391,9 @@ char * typeToString( variableType type ){
     }
     else if( type == REAL ){
         return "REAL";
+    }
+    else if( type == BOOLEAN ){
+        return "BOOLEAN";
     }
     return "";
 }
@@ -271,5 +413,32 @@ char * valueToString( variable x ){
         sprintf( aux, "%f", x.floatValue );
         return aux;
     }
+    else if( x.type == BOOLEAN ){
+        if( x.intValue ) aux = "true";
+        else aux = "false";
+        return aux;
+    }
     return "";
+}
+
+/*Auxiliary function, only usefull in the second version of the compiler*/
+
+int type_op( variable *result, variable x, variable y ){
+    if( x.type == BOOLEAN || y.type == BOOLEAN ){
+        result->type = BOOLEAN;
+        return 0;
+    }
+    if( x.type == STRING || y.type == STRING ){
+        result->type = STRING;
+        return 0;
+    }
+    else if( x.type == REAL || y.type == REAL ){
+        result->type = REAL;
+        return 0;
+    }
+    else if( x.type == INTEGER && y.type == INTEGER ){
+        result->type = INTEGER;
+        return 0;
+    }
+    return 1;
 }

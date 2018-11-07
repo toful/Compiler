@@ -16,6 +16,8 @@
 
     extern FILE *yyin;
 
+    variable aux;
+
 %}
 
 INTEGER     0|"-"[1-9][0-9]*|[1-9][0-9]*
@@ -40,40 +42,98 @@ OPEN_BRACKET           "{"
 CLOSE_BRACKET          "}"
 COMMA 		","
 SEPARATOR	";"
+TWO_POINTS  ":"
 
 %%
 
-":="                {   printf( " = " );
-                        return ASSIGN; }
+"calc on"           { return CALC; }
+"calc off"          { return PROG; }
 
-"**"                { printf( " ^ " ); return POW; }
-"+"                 { printf( " + " ); return ADD; }
-"-"                 { printf( " - " ); return SUBSTRACT; }
-"*"                 { printf( " * " ); return MULTIPLY; }
-"/"                 { printf( " / " ); return DIVIDE; }
-"mod"               { printf( " mod " ); return MOD; }
-"sqrt"              { printf( " sqrt " ); return SQRT; }
+"<>"                {   yylval.rel_op = NE; 
+                        /*printf("<>");*/
+                        return RELATIONAL_OPERATOR; }
+
+">="                {   /*printf(">=");*/
+                        yylval.rel_op = GE; 
+                        return RELATIONAL_OPERATOR; }
+
+">"                 {   /*printf(">");*/
+                        yylval.rel_op = GT; 
+                        return RELATIONAL_OPERATOR; }
+
+"<="                {   /*printf("<=");*/
+                        yylval.rel_op = LE; 
+                        return RELATIONAL_OPERATOR; }
+
+"<"                 {   /*printf("<");*/
+                        yylval.rel_op = LT; 
+                        return RELATIONAL_OPERATOR; }
+
+"="                 {   /*printf("=");*/
+                        yylval.rel_op = EQ; 
+                        return RELATIONAL_OPERATOR; }
+
+"not"               { /*printf(" not ");*/ return NOT; }
+"and"               { /*printf(" and ");*/ return AND; }
+"or"                { /*printf(" or ");*/ return OR; }
+
+"true"              { /*printf("true");*/ return TRUE_VALUE; }
+"false"             { /*printf("false");*/ return FALSE_VALUE; }
+
+"if"                { return IF; }
+"else"              { return ELSE; }
+"fi"                { return FI; }
+"elsif"             { return ELSIF; }
+"then"              { return THEN; }
+"while"             { return WHILE; }
+"do"                { return DO; }
+"done"              { return DONE; }
+"for"               { return FOR; }
+"in"                { return IN; }
+"repeat"            { return REPEAT; }
+"until"             { return UNTIL; }
+"\.\."              { return RANGE; }
+
+"switch"            { return SWITCH; }
+"begin"             { return BEGIN_; }
+"case"              { return CASE; }
+"end"               { return END; }
+"default"           { return DEFAULT;}
+
+
+":="                { return ASSIGN; }
+
+"**"                { return POW; }
+"+"                 { return ADD; }
+"-"                 { return SUBSTRACT; }
+"*"                 { return MULTIPLY; }
+"/"                 { return DIVIDE; }
+"mod"               { return MOD; }
+"sqrt"              { return SQRT; }
 
 {IDENTIFIER}        {   yylval.var.stringValue = (char *) malloc( sizeof( char ) * yyleng );
                         memcpy( yylval.var.stringValue, yytext, yyleng );
                         yylval.var.line = yylineno;
-                        printf( "%s", yylval.var.stringValue );
+                        /*printf( "%s", yylval.var.stringValue );*/
+                        if ( sym_lookup( yylval.var.stringValue, &aux ) != SYMTAB_NOT_FOUND ){
+                            if( aux.type == BOOLEAN ) return BOOLEAN_IDENTIFIER;
+                        }
                         return IDENTIFIER; } 
 
 {INTEGER}           {   yylval.var.intValue = atoi(yytext);
                         yylval.var.type = INTEGER;
-                        printf( "%d", yylval.var.intValue );
+                        /*printf( "%d", yylval.var.intValue );*/
                         return LITERAL; }
 
 {REAL}              {   yylval.var.floatValue = atof(yytext); 
                         yylval.var.type = REAL;
-                        printf( "%f", yylval.var.floatValue );
+                        /*printf( "%f", yylval.var.floatValue );*/
                         return LITERAL; }
 
 {STRING}            {   yylval.var.stringValue = (char *) malloc( sizeof( char ) * yyleng -2 );
                         memcpy( yylval.var.stringValue, &(yytext[1]), yyleng -2 );
                         yylval.var.type = STRING;
-                        printf( "%s", yylval.var.stringValue );
+                        /*printf( "%s", yylval.var.stringValue );*/
                         return LITERAL; }
 
 {COMENT}            { }
@@ -82,15 +142,22 @@ SEPARATOR	";"
 
 {CLOSE_BRACKET}     { return CLOSE_BRACKET;}
 
-{COMMA}             { return COMMA; }
-{OPEN_PARENTHESIS}  { printf("("); return OPEN_PARENTHESIS; }
-{CLOSE_PARENTHESIS} { printf(")\n"); return CLOSE_PARENTHESIS; }
+{COMMA}             {  }
+{OPEN_PARENTHESIS}  { /*printf("(");*/ return OPEN_PARENTHESIS; }
+{CLOSE_PARENTHESIS} { /*printf(")");*/ return CLOSE_PARENTHESIS; }
 {SEPARATOR}         { return SEPARATOR; }
 
-{LINE}              {   printf("\n");
-                        return LINE; }
+{TWO_POINTS}        { return TWO_POINTS; }
+
+{LINE}              { return LINE; }
+
+<<EOF>>             {   static int end = 0; 
+                        return end++ ? 0 : LINE;
+                    }
 
 {SPACE}             {}
+
+
 
 %%
 

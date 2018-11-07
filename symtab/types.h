@@ -3,9 +3,20 @@
 
 typedef enum
 {
+    NE,
+    GE,
+    GT,
+    LE,
+    LT,
+    EQ
+} relationalOperator;
+
+typedef enum
+{
     INTEGER,
     REAL,
     STRING,
+    BOOLEAN
 } variableType;
 
 typedef struct $
@@ -16,8 +27,8 @@ typedef struct $
         char * stringValue;
     };
     variableType type;
-    char * name;
-    int line;
+    char * name;    /*not used*/
+    int line;       /*not used*/
 
 } variable;
 
