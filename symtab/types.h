@@ -19,6 +19,12 @@ typedef enum
     BOOLEAN
 } variableType;
 
+typedef struct
+{
+    int lineNumber;
+    void * next;
+} lineNumberList;
+
 typedef struct $
 {
     union {
@@ -27,9 +33,28 @@ typedef struct $
         char * stringValue;
     };
     variableType type;
-    char * name;    /*not used*/
-    int line;       /*not used*/
+    char * name;
+    int line;
+    int id;
 
+    lineNumberList * truelist;
+    lineNumberList * falselist;
+    lineNumberList * statementlist;
 } variable;
+
+
+/*
+line -> the full content of the three adress code
+lineNumber -> the next line of the three adress code that has to be filled
+MAXLINES -> constant
+temporalNumber -> number id for the next temporal variable
+*/
+typedef struct
+{
+        char** line;
+        int lineNumber;
+        int MAXLINES;
+        int temporalNumber;
+} addressCode3;
 
 #endif

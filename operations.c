@@ -410,7 +410,7 @@ char * valueToString( variable x ){
     }
     else if( x.type == REAL ){
         aux = (char *) malloc( 21 );
-        sprintf( aux, "%f", x.floatValue );
+        sprintf( aux, "%.2f", x.floatValue );
         return aux;
     }
     else if( x.type == BOOLEAN ){
@@ -419,6 +419,11 @@ char * valueToString( variable x ){
         return aux;
     }
     return "";
+}
+
+char * getValue( variable x ){
+    if( x.name == NULL ) return valueToString( x );
+    else return x.name;
 }
 
 /*Auxiliary function, only usefull in the second version of the compiler*/
@@ -441,4 +446,204 @@ int type_op( variable *result, variable x, variable y ){
         return 0;
     }
     return 1;
+}
+
+char* add_op_symbol( variable *result, variable x, variable y ){
+    if( x.type == STRING || y.type == STRING ){
+        result->type = STRING;
+        return("ADDC");
+    }
+    else if( x.type == REAL || y.type == REAL ){
+        result->type = REAL;
+        return ("ADDF");
+    }
+    else if( x.type == INTEGER && y.type == INTEGER ){
+        result->type = INTEGER;
+        return ("ADDI");
+    }
+    return "";
+}
+
+char* sub_op_symbol( variable *result, variable x, variable y ){
+    if( x.type == REAL || y.type == REAL ){
+        result->type = REAL;
+        return( "SUBF" );
+    }
+    else if( x.type == INTEGER && y.type == INTEGER ){
+        result->type = INTEGER;
+        return( "SUBI");
+    }
+    return "";
+}
+
+char* mul_op_symbol( variable *result, variable x, variable y ){
+    if( x.type == REAL || y.type == REAL ){
+        result->type = REAL;
+        return ("MULF");
+    }
+    else if( x.type == INTEGER && y.type == INTEGER ){
+        result->type = INTEGER;
+        return ("MULI");
+    }
+    return "";
+}
+
+char* divide_op_symbol( variable *result, variable x, variable y ){
+    if( x.type == REAL || y.type == REAL ){
+        result->type = REAL;
+        return ("DIVF");
+    }
+    else if( x.type == INTEGER && y.type == INTEGER ){
+        result->type = INTEGER;
+        return ("DIVI");
+    }
+    return "";
+}
+
+char* mod_op_symbol( variable *result, variable x, variable y ){
+    if( x.type == REAL || y.type == REAL ){
+        result->type = REAL;
+        return ("MODF");
+    }
+    else if( x.type == INTEGER && y.type == INTEGER ){
+        result->type = INTEGER;
+        return ("MODI");
+    }
+    return "";
+}
+
+char* change_sign_symbol( variable *result, variable x ){
+    if( x.type == INTEGER ){
+        result->type = INTEGER;
+        return ("CHSI");
+    }
+    else if ( x.type == REAL ){
+        result->type = REAL;
+        return ("CHSF");
+    }
+    else return "";
+}
+
+char* pow_op_symbol( variable *result, variable x, variable y ){
+
+    printf("Entering into the pow function.\n");
+
+    if( x.type == REAL || y.type == REAL ){
+        result->type = REAL;
+        return ("POWF");
+    }
+    else if( x.type == INTEGER && y.type == INTEGER ){
+        result->type = INTEGER;
+        return ("POWI");
+    }
+    return "";
+}
+
+/*char * getRelationalOperatorSymbol( relationalOperator relOp ){
+    switch( relOp ){
+        case NE:
+            return "NE";
+        break;
+        case GE:
+            return "GE";
+        break;
+        case GT:
+            return "GT";
+        break;
+        case LE:
+            return "LE";
+        break;
+        case LT:
+            return "LT";
+        break;
+        case EQ:
+            return "EQ";
+        break;
+        default:
+            return "ERROR";
+        break;
+    }
+}*/
+
+int get_type_op( variable x, variable y ){
+    if( x.type == REAL || y.type == REAL ){
+        return REAL;
+    }
+    else {
+        return INTEGER;
+    }
+}
+
+char * getRelationalOperatorSymbol( relationalOperator relOp, variableType type ){
+    char * result = ( char * ) malloc( sizeof( char *) * 3 );
+
+    switch( relOp ){
+        case NE:
+            strcpy( result, "NE" );
+        break;
+        case GE:
+            strcpy( result, "GE" );
+        break;
+        case GT:
+            strcpy( result, "GT" );
+        break;
+        case LE:
+            strcpy( result, "LE" );
+        break;
+        case LT:
+            strcpy( result, "LT" );
+        break;
+        case EQ:
+            strcpy( result, "EQ" );
+        break;
+        default:
+            strcpy( result, "??" );
+        break;
+    }
+
+    switch( type ){
+        case REAL:
+            strcat( result, "F" );
+        break;
+        case INTEGER:
+            strcat( result, "I" );
+        break;
+        default:
+            strcat( result, "?" );
+        break;
+    }
+    return result;
+}
+
+void write_instruction( char* instruction, variable r, variable x, variable y, char* op ){
+    char* aux1;
+    char* aux2;
+    printf("write_instruction\n");
+
+    if( x.id ){
+        aux1 = (char * ) malloc( sizeof( char ) * strlen( x.name ) );
+        memcpy( aux1, x.name, strlen( x.name ) );
+    }
+    else aux1 = valueToString( x );
+
+    if( y.id ){
+        aux2 = (char * ) malloc( sizeof( char ) * strlen( y.name ) );
+        memcpy( aux2, y.name, strlen( y.name ) );
+    }
+    else aux2 = valueToString( y );
+
+    sprintf( instruction, "%s := %s %s %s", r.name, aux1, op, aux2 );
+}
+
+
+void write_instruction_short( char* instruction, variable r, variable x, char* op ){
+    char* aux1;
+
+    if( x.id ){
+        aux1 = (char * ) malloc( sizeof( char ) * strlen( x.name ) );
+        memcpy( aux1, x.name, strlen( x.name ) );
+    }
+    else aux1 = valueToString( x );
+
+    sprintf( instruction, "%s := %s %s", r.name, op, aux1 );
 }

@@ -1,3 +1,8 @@
+/*######################################################################
+#                           Compiladors
+#                        Cristòfol Daudén Esmel
+#                          Operations.h file 
+######################################################################*/
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -21,6 +26,21 @@ int relational_op( variable *result, relationalOperator relOp, variable x, varia
 
 char * typeToString( variableType type );
 char * valueToString( variable x );
+char * getValue( variable x );
 
 int type_op( variable *result, variable x, variable y );
+
+char * add_op_symbol( variable *result, variable x, variable y );
+char * sub_op_symbol( variable *result, variable x, variable y );
+char * mul_op_symbol( variable *result, variable x, variable y );
+char * divide_op_symbol( variable *result, variable x, variable y );
+char * mod_op_symbol( variable *result, variable x, variable y );
+char * change_sign_symbol( variable *result, variable x );
+char * pow_op_symbol( variable *result, variable x, variable y );
+
+int get_type_op( variable x, variable y );
+char * getRelationalOperatorSymbol( relationalOperator relOp, variableType type );
+
+void write_instruction( char* instruction, variable r, variable x, variable y, char* op );
+void write_instruction_short( char* instruction, variable r, variable x, char* op );
 

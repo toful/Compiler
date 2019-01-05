@@ -11,10 +11,11 @@
     #include <math.h>
     #include "./symtab/symtab.h"
     #include "operations.h"
+    #include "ThreeAddressCode.h"
 
     #include "SyntacticAnalyzer.h"
     extern FILE *yyout; 
-    extern int yylineno; 
+    extern int yylineno;
     extern int yylex();
     extern void yyerror( const char* );
 
@@ -25,6 +26,9 @@
 
     int tab=0;
     int i;
+
+    char instruction[ INSTRUCCION_LENGTH ];
+
 
 %}
 
@@ -103,24 +107,55 @@
 %type <var> level3_boolean_exp_list
 %type <var> level4_boolean_exp_list
 
+%type <var> getLine
+%type <var> emitGoTo
+
+%type <var> statement_list
+%type <var> statement
+%type <var> while_statement
+%type <var> if_statement
+%type <var> for_statement
+%type <var> repeat_statement
+%type <var> switch_statement
+%type <var> LINE
+
+%type <var> conditional_statement
+
+%type <var> P
+%type <var> Q
+
 %%
 
 /*grammar definition*/
 
-program : check_mode LINE statement_list
+program : check_mode LINE statement_list{
+    drop();
+};
 
 check_mode: LINE check_mode
             | CALC {  mode_calc = 1; 
                     fprintf( yyout, "Compiler set in CALCULATOR Mode\n" );
                     printf( "Compiler set in CALCULATOR Mode\n" ); 
                 };
-            | PROG {mode_calc = 0; 
-                    fprintf( yyout, "Compiler set in PROGRAM Mode\n" );
+            | PROG {mode_calc = 0;
+                    init_3AC();
                     printf( "Compiler set in PROGRAM Mode\n" ); 
                 };
 
-statement_list : statement_list statement 
-                 | statement
+getLine : { $$.line = instructions.lineNumber; };
+
+emitGoTo : { $$.statementlist = createList( instructions.lineNumber );
+             sprintf( instruction, "GOTO " );
+             emit( instruction );
+            };
+
+
+statement_list : statement_list statement { $$.statementlist = createList( instructions.lineNumber );
+                                            $$.truelist = NULL;
+                                            $$.falselist = NULL; }
+                 | statement { $$.statementlist = createList( instructions.lineNumber );
+                               $$.truelist = NULL;
+                               $$.falselist = NULL; }
 
 statement : IDENTIFIER ASSIGN general_expression LINE
 {
@@ -140,13 +175,22 @@ statement : IDENTIFIER ASSIGN general_expression LINE
     }
     else{
         char * result_type = typeToString( $3.type );
+        char * result_value = valueToString( $3 );
     
         if ( sym_lookup( $1.stringValue, &aux ) == SYMTAB_NOT_FOUND || aux.type == $3.type ){
+            if( ! $3.id ){
+                $3.id = 1;
+                sprintf( instruction, "%s := %s", $1.stringValue, result_value);
+                emit( instruction );
+            }
+            else{
+                sprintf( instruction, "%s := %s", $1.stringValue, $3.name );
+                emit( instruction );
+            }
+
+            $3.name = (char * ) malloc( sizeof( char ) * strlen( $1.stringValue ) );
+            memcpy( $3.name, $1.stringValue, strlen( $1.stringValue ) );
             sym_enter( $1.stringValue, &$3 );
-            for( i=0; i < tab; i++ ) printf("\t");
-            printf("(%s) %s\n", result_type, $1.stringValue );
-            for( i=0; i < tab; i++ ) fprintf(yyout, "\t");
-            fprintf( yyout, "(%s) %s\n", result_type, $1.stringValue );
         }
         else{
             sprintf( error_message, "SEMANTIC ERROR: variable ( %s ) type ( %s ) is diferent from the expression type ( %s )", $1.stringValue, typeToString( $1.type ), result_type );
@@ -165,20 +209,39 @@ statement : general_expression LINE
         fprintf( yyout ,"EXPRESSION: (%s) %s\n", result_type, result_value );
     }
     else{
-        char * result_type = typeToString( $1.type );
-        for( i=0; i < tab; i++ ) printf("\t");
-        printf("(%s)\n", result_type );
+        sprintf( instruction, "PARAM %s", $1.name );
+        emit( instruction );
 
-        for( i=0; i < tab; i++ ) fprintf(yyout, "\t");
-        fprintf( yyout ,"(%s)\n", result_type );
+        switch( $1.type ){
+            case INTEGER:
+                sprintf( instruction, "CALL PUTI,1");
+            break;
+            case REAL:
+                sprintf( instruction, "CALL PUTF,1");
+            break;
+            default:
+                sprintf( instruction, "CALL PUT,1");
+            break;
+        }
+        emit( instruction );
+
+        /*char * result_type = typeToString( $1.type );
+        for( i=0; i < tab; i++ ) printf("\t");
+        printf("(%s)\n", result_type );*/
     }
 };
 
-statement : while_statement | if_statement | for_statement | repeat_statement | switch_statement
+statement : conditional_statement getLine { complete( $1.statementlist, $2.line );
+                                            while( $1.statementlist->next != NULL ){
+                                                $1.statementlist = ( lineNumberList * ) $1.statementlist->next;
+                                                complete( $1.statementlist, $2.line );
+                                            } }
+
+conditional_statement : while_statement | if_statement | for_statement | repeat_statement | switch_statement
 
 statement : LINE
 
-while_statement: WHILE init_while level1_boolean_exp_list DO LINE statement_list DONE LINE
+while_statement: WHILE init_while getLine level1_boolean_exp_list DO LINE getLine statement_list DONE LINE
 {
     if( mode_calc ){
         sprintf( error_message, "SEMANTIC ERROR: WHILE statement is not available in the CALCULATOR MODE" );
@@ -188,13 +251,23 @@ while_statement: WHILE init_while level1_boolean_exp_list DO LINE statement_list
         tab--;
         for( i=0; i < tab; i++ ) printf("\t");
         printf("While statement done.\n");
-        for( i=0; i < tab; i++ ) fprintf(yyout,"\t");
-        fprintf(yyout, "While statement done.\n");
+
+        complete( $4.truelist, $7.line );
+
+        /*Useless?
+        complete( $8.statementlist, $3.line );*/
+        
+        sprintf( instruction, "GOTO %d", $3.line );
+        emit( instruction );
+        
+        $$.statementlist = $4.falselist;
+        $$.truelist = NULL;
+        $$.falselist = NULL;
     }
 };
 
 
-if_statement: IF init_if level1_boolean_exp_list THEN LINE statement_list FI LINE
+if_statement: IF init_if level1_boolean_exp_list THEN LINE getLine statement_list FI LINE
 {
     if( mode_calc ){
         sprintf( error_message, "SEMANTIC ERROR: IF statement is not available in the CALCULATOR MODE" );
@@ -204,13 +277,21 @@ if_statement: IF init_if level1_boolean_exp_list THEN LINE statement_list FI LIN
         tab--;
         for( i=0; i < tab; i++ ) printf("\t");
         printf("IF statement done.\n");
-        for( i=0; i < tab; i++ ) fprintf(yyout,"\t");
-        fprintf(yyout, "If statement done.\n");
+        
+        complete( $3.truelist, $6.line );
+        while( $3.truelist->next != NULL ){
+            $3.truelist = ( lineNumberList * ) $3.truelist->next;
+            complete( $3.truelist, $6.line );
+        }
+
+        $$.statementlist = merge( $3.falselist, $7.statementlist );
+        $$.truelist = NULL;
+        $$.falselist = NULL;
     }
 };
 
 
-if_statement: IF init_if level1_boolean_exp_list THEN LINE statement_list ELSE init_else LINE statement_list FI LINE 
+if_statement: IF init_if level1_boolean_exp_list THEN LINE getLine statement_list emitGoTo ELSE init_else LINE getLine statement_list FI LINE
 {
     if( mode_calc ){
         sprintf( error_message, "SEMANTIC ERROR: IF ELSE statement is not available in the CALCULATOR MODE" );
@@ -220,13 +301,18 @@ if_statement: IF init_if level1_boolean_exp_list THEN LINE statement_list ELSE i
         tab--;
         for( i=0; i < tab; i++ ) printf("\t");
         printf("IF ELSE statement done.\n");
-        for( i=0; i < tab; i++ ) fprintf(yyout,"\t");
-        fprintf(yyout, "IF ELSE statement done.\n");
+
+        complete( $3.truelist, $6.line );
+        complete( $3.falselist, $12.line );
+        $$.statementlist = merge( $7.statementlist, $13.statementlist );
+        $$.statementlist = merge( $$.statementlist, $8.statementlist );
+        $$.truelist = NULL;
+        $$.falselist = NULL;
     }
 };
 
 
-if_statement: IF init_if level1_boolean_exp_list THEN LINE statement_list elseif_statement_list ELSE init_else LINE statement_list FI LINE 
+if_statement: IF init_if level1_boolean_exp_list THEN LINE getLine statement_list elseif_statement_list ELSE init_else LINE statement_list FI LINE getLine
 {
     if( mode_calc ){
         sprintf( error_message, "SEMANTIC ERROR: ELSIF statement is not available in the CALCULATOR MODE" );
@@ -246,29 +332,8 @@ elseif_statement_list:  elseif_statement_list elseif_statement
 
 elseif_statement:   ELSIF init_elsif boolean_expression THEN LINE statement_list
 
-/*for_statement: FOR init_for IDENTIFIER IN range DO LINE statement_list DONE LINE 
-{
-    if( mode_calc ){
-        sprintf( error_message, "SEMANTIC ERROR: FOR statement is not available in the CALCULATOR MODE" );
-        yyerror( error_message );
-    }
-    else{
-        if ( sym_lookup( $3.stringValue, &aux ) != SYMTAB_NOT_FOUND ){
-            sprintf( error_message,"SEMANTIC ERROR: ID ( %s ) is already defined", $3.stringValue);
-            yyerror( error_message );
-        }
-        aux.type = INTEGER;
-        sym_enter( $3.stringValue, &aux );
-        
-        tab--;
-        for( i=0; i < tab; i++ ) printf("\t");
-        printf("FOR statement done.\n");
-        for( i=0; i < tab; i++ ) fprintf(yyout, "\t");
-        fprintf(yyout, "FOR statement done.\n");
-    }
-};*/
 
-for_statement: FOR init_for IN range DO LINE statement_list DONE LINE 
+/*for_statement: FOR init_for IN range DO LINE statement_list DONE LINE 
 {
     if( mode_calc ){
         sprintf( error_message, "SEMANTIC ERROR: FOR statement is not available in the CALCULATOR MODE" );
@@ -282,6 +347,65 @@ for_statement: FOR init_for IN range DO LINE statement_list DONE LINE
         fprintf(yyout, "FOR statement done.\n");
     }
 };
+
+range: level1_expression_list RANGE level1_expression_list
+*/
+
+for_statement: P DO LINE statement_list DONE LINE{
+    complete( $1.statementlist, instructions.lineNumber );
+
+    /*sprintf( instruction, "%s := %s + %d", $1.name, $1.name, 1 );
+    emit( instruction );*/
+    
+    aux.name = ( char * ) malloc( sizeof( char ) * 4 );
+    sprintf( aux.name, "$t%02d", getNextTemporal() );
+    sprintf( instruction, "%s := %s ADDI %d", aux.name, $1.name, 1 );
+    emit( instruction );
+    sprintf( instruction, "%s := %s", $1.name, aux.name );
+    emit( instruction );
+
+    sprintf( instruction, "GOTO %d", $1.line );
+    emit( instruction );
+    $$.statementlist = $1.statementlist;
+
+    tab--;
+    for( i=0; i < tab; i++ ) printf("\t");
+    printf("FOR statement done.\n");
+}
+
+P: Q RANGE level1_expression_list {
+    $$.name = $1.name;
+    $$.line = instructions.lineNumber;
+    sprintf( instruction, "IF %s LEI %s GOTO %d", $1.name, getValue( $3 ), instructions.lineNumber+2 );
+    emit( instruction );
+    $$.statementlist = createList( instructions.lineNumber );
+    sprintf( instruction, "GOTO " );
+    emit( instruction );
+}
+
+Q: FOR IDENTIFIER IN level1_expression_list {
+    if( mode_calc ){
+        sprintf( error_message, "SEMANTIC ERROR: FOR statement is not available in the CALCULATOR MODE" );
+        yyerror( error_message );
+    }
+
+    printf("\n");
+    for( i=0; i < tab; i++ ) printf("\t");
+    printf("FOR statement started\n");
+    tab++;
+
+    if ( sym_lookup( $2.stringValue, &aux ) != SYMTAB_NOT_FOUND ){
+        sprintf( error_message,"SEMANTIC ERROR: ID ( %s ) is already defined", $2.stringValue);
+        yyerror( error_message );
+    }
+    aux.type = INTEGER;
+    sym_enter( $2.stringValue, &aux );
+
+    sprintf( instruction, "%s := %s", $2.stringValue, getValue( $4 ) );
+    emit( instruction );
+    $$.name = $2.stringValue; 
+}
+
 
 repeat_statement: REPEAT init_repeat LINE statement_list UNTIL level1_boolean_exp_list LINE
 {
@@ -297,8 +421,6 @@ repeat_statement: REPEAT init_repeat LINE statement_list UNTIL level1_boolean_ex
         fprintf(yyout, "REPEAT_UNTIL statement done.\n");
     }
 };
-
-range: level1_expression_list RANGE level1_expression_list
 
 
 switch_statement: SWITCH init_switch level1_expression_list BEGIN_ LINE case_list DEFAULT init_default TWO_POINTS LINE statement_list END LINE
@@ -324,28 +446,22 @@ case_statemnt: CASE init_case LITERAL TWO_POINTS  LINE statement_list { tab--; }
 
 
 init_while: {   printf("\n");
-                fprintf(yyout, "\n");
                 for( i=0; i < tab; i++ ) printf("\t");
                 printf("While statement started\n");
+                /*fprintf(yyout, "\n");
                 for( i=0; i < tab; i++ ) fprintf( yyout, "\t");
-                fprintf( yyout, "While statement started\n");
+                fprintf( yyout, "While statement started\n");*/
                 tab++; };
 
 init_if: {  printf("\n");
-            fprintf(yyout, "\n");
             for( i=0; i < tab; i++ ) printf("\t");
             printf("If statement started\n");
+            /*fprintf(yyout, "\n");
             for( i=0; i < tab; i++ ) fprintf( yyout, "\t");
-            fprintf( yyout, "If statement started\n");
+            fprintf( yyout, "If statement started\n");*/
             tab++; };
 
-/*init_for: { for( i=0; i < tab; i++ ) printf("\t");
-            printf("\nFor statement started\n");
-            for( i=0; i < tab; i++ ) fprintf( yyout, "\t");
-            fprintf( yyout, "\nFor statement started\n");
-            tab++; };
-*/
-init_for: IDENTIFIER { 
+/*init_for: IDENTIFIER { 
             if ( sym_lookup( $1.stringValue, &aux ) != SYMTAB_NOT_FOUND ){
                 sprintf( error_message,"SEMANTIC ERROR: ID ( %s ) is already defined", $1.stringValue);
                 yyerror( error_message );
@@ -354,52 +470,47 @@ init_for: IDENTIFIER {
             sym_enter( $1.stringValue, &aux );
 
             printf("\n");
-            fprintf(yyout, "\n");
             for( i=0; i < tab; i++ ) printf("\t");
             printf("For statement started\n");
-            for( i=0; i < tab; i++ ) fprintf( yyout, "\t");
-            fprintf( yyout, "For statement started\n");
-            tab++; };
+            tab++; };*/
 
 init_repeat: {  printf("\n");
                 for( i=0; i < tab; i++ ) printf("\t");
                 printf("Repeat_Until statement started\n");
-                fprintf(yyout, "\n");
+                /*fprintf(yyout, "\n");
                 for( i=0; i < tab; i++ ) fprintf( yyout, "\t");
-                fprintf( yyout, "Repeat_Until statement started\n");
+                fprintf( yyout, "Repeat_Until statement started\n");*/
                 tab++; };
 
 init_else: {for( i=0; i < tab -1; i++ ) printf("\t");
             printf("Else statement\n");
-            for( i=0; i < tab -1; i++ ) fprintf( yyout, "\t");
-            fprintf( yyout, "Else statement started\n"); };
+            /*for( i=0; i < tab -1; i++ ) fprintf( yyout, "\t");
+            fprintf( yyout, "Else statement started\n");*/ };
 
 init_elsif: {   for( i=0; i < tab -1; i++ ) printf("\t");
                 printf("Elsif statement\n");
-                for( i=0; i < tab -1; i++ ) fprintf( yyout, "\t");
-                fprintf( yyout, "Elsif statement started\n"); };
+                /*for( i=0; i < tab -1; i++ ) fprintf( yyout, "\t");
+                fprintf( yyout, "Elsif statement started\n");*/ };
 
 init_switch: {  printf("\n");
                 for( i=0; i < tab; i++ ) printf("\t");
                 printf("Switch statement started\n");
-                fprintf(yyout, "\n");
+                /*fprintf(yyout, "\n");
                 for( i=0; i < tab; i++ ) fprintf( yyout, "\t");
-                fprintf( yyout, "Switch statement started\n");
+                fprintf( yyout, "Switch statement started\n");*/
                 tab++; };
 
 init_case: {   for( i=0; i < tab; i++ ) printf("\t");
                 printf("Case statement\n");
-                for( i=0; i < tab; i++ ) fprintf( yyout, "\t");
-                fprintf( yyout, "Case statement started\n");
+                /*for( i=0; i < tab; i++ ) fprintf( yyout, "\t");
+                fprintf( yyout, "Case statement started\n");*/
                 tab++; };
 
 init_default: { for( i=0; i < tab; i++ ) printf("\t");
                 printf("Default statement\n");
-                for( i=0; i < tab; i++ ) fprintf( yyout, "\t");
-                fprintf( yyout, "Default statement started\n");
+                /*for( i=0; i < tab; i++ ) fprintf( yyout, "\t");
+                fprintf( yyout, "Default statement started\n");*/
                 tab++; };
-
-
 
 
 general_expression :    level1_boolean_exp_list
@@ -414,6 +525,11 @@ level1_expression_list : level1_expression_list ADD level2_expression_list
     }
     else{
         if( type_op( &$$, $1, $3) ) yyerror( "SEMATIC ERROR: something happened in the DEF_TYPE operation" );
+        $$.name = ( char * ) malloc( sizeof( char ) * 4 );
+        sprintf( $$.name, "$t%02d", getNextTemporal() );
+
+        write_instruction( instruction, $$, $1, $3, add_op_symbol( &$$, $1, $3 ) );
+        emit( instruction );
     }
 }; 
 | level1_expression_list SUBSTRACT level2_expression_list 
@@ -423,6 +539,13 @@ level1_expression_list : level1_expression_list ADD level2_expression_list
     }
     else{
         if( type_op( &$$, $1, $3) ) yyerror( "SEMATIC ERROR: something happened in the DEF_TYPE operation" );
+        $$.name = ( char * ) malloc( sizeof( char ) * 4 );
+        sprintf( $$.name, "$t%02d", getNextTemporal() );
+
+        printf("%d\n", $3.intValue);
+        
+        write_instruction( instruction, $$, $1, $3, sub_op_symbol( &$$, $1, $3 ) );
+        emit( instruction );
     }
 };
 | ADD level2_expression_list { $$ = $2; };
@@ -432,7 +555,11 @@ level1_expression_list : level1_expression_list ADD level2_expression_list
         if( change_sign( &$$, $2 ) ) yyerror( "SEMATIC ERROR: something happened in the CAHNGE SIGN operation" );
     }
     else{
-        $$ = $2;
+        $$.name = ( char * ) malloc( sizeof( char ) * 4 );
+        sprintf( $$.name, "$t%02d", getNextTemporal() );
+
+        write_instruction_short( instruction, $$, $2, change_sign_symbol( &$$, $2 ) );
+        emit( instruction );
     } 
 };
 | level2_expression_list { $$ = $1; };
@@ -446,6 +573,11 @@ level2_expression_list : level2_expression_list MULTIPLY level3_expression_list
     }
     else{
         if( type_op( &$$, $1, $3) ) yyerror( "SEMATIC ERROR: something happened in the DEF_TYPE operation" );
+        $$.name = ( char * ) malloc( sizeof( char ) * 4 );
+        sprintf( $$.name, "$t%02d", getNextTemporal() );
+
+        write_instruction( instruction, $$, $1, $3, mul_op_symbol( &$$, $1, $3 ) );
+        emit( instruction );
     }
 };
 | level2_expression_list DIVIDE level3_expression_list
@@ -455,6 +587,11 @@ level2_expression_list : level2_expression_list MULTIPLY level3_expression_list
     }
     else{
         if( type_op( &$$, $1, $3) ) yyerror( "SEMATIC ERROR: something happened in the DEF_TYPE operation" );
+        $$.name = ( char * ) malloc( sizeof( char ) * 4 );
+        sprintf( $$.name, "$t%02d", getNextTemporal() );
+
+        write_instruction( instruction, $$, $1, $3, divide_op_symbol( &$$, $1, $3 ) );
+        emit(instruction);
     }
 };
 | level2_expression_list MOD level3_expression_list
@@ -464,6 +601,11 @@ level2_expression_list : level2_expression_list MULTIPLY level3_expression_list
     }
     else{
         if( type_op( &$$, $1, $3) ) yyerror( "SEMATIC ERROR: something happened in the DEF_TYPE operation" );
+        $$.name = ( char * ) malloc( sizeof( char ) * 4 );
+        sprintf( $$.name, "$t%02d", getNextTemporal() );
+
+        write_instruction( instruction, $$, $1, $3, mod_op_symbol( &$$, $1, $3 ) );
+        emit( instruction );
     }
 };
 | level3_expression_list { $$ = $1; };
@@ -506,26 +648,33 @@ level4_expression_list :    OPEN_PARENTHESIS level1_expression_list CLOSE_PARENT
 
 
 /*                      LEVEL 1 BOOLEAN EXPRESSION LIST                                     */
-level1_boolean_exp_list :   level1_boolean_exp_list OR level2_boolean_exp_list 
+level1_boolean_exp_list :   level1_boolean_exp_list OR getLine level2_boolean_exp_list 
 { 
     if( mode_calc ){
-        if( or_op( &$$, $1, $3) ) yyerror( "SEMATIC ERROR: something happened in the OR operation" );
+        if( or_op( &$$, $1, $4) ) yyerror( "SEMATIC ERROR: something happened in the OR operation" );
     }
     else{
-        if( type_op( &$$, $1, $3) ) yyerror( "SEMATIC ERROR: something happened in the DEF_TYPE operation" );
+        if( type_op( &$$, $1, $4) ) yyerror( "SEMATIC ERROR: something happened in the DEF_TYPE operation" );
+
+        complete( $1.falselist, $3.line );
+        $$.truelist = merge( $1.truelist, $4.truelist );
+        $$.falselist = $4.falselist;
     }
 };
 | level2_boolean_exp_list { $$ = $1; };
 
 
 /*                      LEVEL 2 BOOLEAN EXPRESSION LIST                                     */
-level2_boolean_exp_list :   level2_boolean_exp_list AND level3_boolean_exp_list
+level2_boolean_exp_list :   level2_boolean_exp_list AND getLine level3_boolean_exp_list
 { 
     if( mode_calc ){
         if( and_op( &$$, $1, $3) ) yyerror( "SEMATIC ERROR: something happened in the OR operation" );
     }
     else{
         if( type_op( &$$, $1, $3) ) yyerror( "SEMATIC ERROR: something happened in the DEF_TYPE operation" );
+        complete( $1.truelist, $3.line );
+        $$.truelist = $4.truelist;
+        $$.falselist = merge( $1.falselist, $4.falselist );
     }
 };
 | level3_boolean_exp_list { $$ = $1; };
@@ -539,6 +688,9 @@ level3_boolean_exp_list :   NOT level4_boolean_exp_list
     }
     else{
         $$ = $2;
+
+        $$.truelist = $2.falselist;
+        $$.falselist = $2.truelist;
     }
 };
 | level4_boolean_exp_list { $$ = $1; };
@@ -565,13 +717,33 @@ boolean_expression: level1_expression_list RELATIONAL_OPERATOR level1_expression
     }
     else{
         $$.type = BOOLEAN;
+
+        $$.truelist = createList( instructions.lineNumber );
+        $$.statementlist = NULL;
+        sprintf( instruction, "IF %s %s %s GOTO ", getValue( $1 ), getRelationalOperatorSymbol( $2, get_type_op( $1 , $3 ) ), getValue( $3 ) );
+        emit( instruction );
+        $$.falselist = createList( instructions.lineNumber );
+        sprintf( instruction, "GOTO " );
+        emit( instruction );
     }
 };
 
 boolean_expression: TRUE_VALUE { $$.type = BOOLEAN;
-                                 $$.intValue = 1; };
+                                 $$.intValue = 1; 
+                                 
+                                 $$.truelist = createList( instructions.lineNumber );
+                                 $$.falselist = NULL;
+                                 $$.statementlist = NULL;
+                                 sprintf( instruction, "GOTO " );
+                                 emit( instruction );};
                     | FALSE_VALUE { $$.type = BOOLEAN;
-                                    $$.intValue = 0; };
+                                    $$.intValue = 0;
+
+                                    $$.falselist = createList( instructions.lineNumber );
+                                    $$.truelist = NULL;
+                                    $$.statementlist = NULL;
+                                    sprintf( instruction, "GOTO " );
+                                    emit( instruction );};
 
 boolean_expression: BOOLEAN_IDENTIFIER {
     if ( sym_lookup( $1.stringValue, &$$ ) == SYMTAB_NOT_FOUND ){

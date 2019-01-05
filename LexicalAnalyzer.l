@@ -31,7 +31,7 @@ LINE        "\n"
 
 STRING      "\""[^"\""{LINE}]*"\""
 
-COMENT      "/*"(.|{LINE})*"*/"|"//".*{LINE}
+COMMENT      "/*"(.|{LINE})*"*/"|"//".*{LINE}
 
 OPEN_PARENTHESIS	   "("
 CLOSE_PARENTHESIS	   ")"
@@ -114,6 +114,7 @@ TWO_POINTS  ":"
 {IDENTIFIER}        {   yylval.var.stringValue = (char *) malloc( sizeof( char ) * yyleng );
                         memcpy( yylval.var.stringValue, yytext, yyleng );
                         yylval.var.line = yylineno;
+                        yylval.var.id = 1;
                         /*printf( "%s", yylval.var.stringValue );*/
                         if ( sym_lookup( yylval.var.stringValue, &aux ) != SYMTAB_NOT_FOUND ){
                             if( aux.type == BOOLEAN ) return BOOLEAN_IDENTIFIER;
@@ -122,21 +123,24 @@ TWO_POINTS  ":"
 
 {INTEGER}           {   yylval.var.intValue = atoi(yytext);
                         yylval.var.type = INTEGER;
+                        yylval.var.id = 0;
                         /*printf( "%d", yylval.var.intValue );*/
                         return LITERAL; }
 
 {REAL}              {   yylval.var.floatValue = atof(yytext); 
                         yylval.var.type = REAL;
+                        yylval.var.id = 0;
                         /*printf( "%f", yylval.var.floatValue );*/
                         return LITERAL; }
 
 {STRING}            {   yylval.var.stringValue = (char *) malloc( sizeof( char ) * yyleng -2 );
                         memcpy( yylval.var.stringValue, &(yytext[1]), yyleng -2 );
                         yylval.var.type = STRING;
+                        yylval.var.id = 0;
                         /*printf( "%s", yylval.var.stringValue );*/
                         return LITERAL; }
 
-{COMENT}            { }
+{COMMENT}            { }
 
 {OPEN_BRACKET}      { return OPEN_BRACKET; }
 

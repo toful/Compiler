@@ -17,7 +17,7 @@ EYACC = SyntacticAnalyzer.y
 SRCY = SyntacticAnalyzer.c
 
 OBJ = LexicalAnalyzer.o SyntacticAnalyzer.o compiler.o
-SRC = compiler.c symtab/symtab.c operations.c
+SRC = compiler.c symtab/symtab.c operations.c ThreeAddressCode.c
 
 BIN = compiler
 
@@ -47,3 +47,8 @@ run : clean all
 		echo "\nRunning "$$filename; \
 		./$(BIN) ./input/$$file ./output/$$file; \
 	done
+
+test: clean all
+	mkdir output
+	./$(BIN) ./input/program.txt ./output/program.out;
+	more ./output/program.out
