@@ -23,3 +23,5 @@ int getNextTemporal();
 void complete( lineNumberList * line, int pos );
 lineNumberList * merge( lineNumberList * list1, lineNumberList * list2 );
 lineNumberList * createList( int lineNumber );
+switchLineNumberList * createSwitchList( int lineNumber, int caseValue );
+switchLineNumberList * mergeSwitchList( switchLineNumberList * list1, switchLineNumberList * list2 );

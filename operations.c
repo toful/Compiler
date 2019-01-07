@@ -258,6 +258,7 @@ int or_op( variable *result, variable x, variable y ){
 
 int and_op( variable *result, variable x, variable y ){
     printf("Entering into the AND logical operation function.\n");
+
     if( x.type == BOOLEAN && y.type == BOOLEAN ){
         result->type = BOOLEAN;
         result->intValue = x.intValue && y.intValue;
@@ -618,7 +619,6 @@ char * getRelationalOperatorSymbol( relationalOperator relOp, variableType type 
 void write_instruction( char* instruction, variable r, variable x, variable y, char* op ){
     char* aux1;
     char* aux2;
-    printf("write_instruction\n");
 
     if( x.id ){
         aux1 = (char * ) malloc( sizeof( char ) * strlen( x.name ) );

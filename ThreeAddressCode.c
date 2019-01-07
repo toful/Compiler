@@ -70,9 +70,14 @@ void complete( lineNumberList * line, int pos ){
     instructions.line[ line->lineNumber ] = realloc( instructions.line[ line->lineNumber ], sizeof( char ) * lineSize );
     memcpy( &instructions.line[ line->lineNumber ][x], aux, lineSize );
 
-    line = line->next;
-
     free( aux );
+
+    if( line->next != NULL ){
+        line = line->next;
+        complete( line, pos );
+    }
+
+    line = line->next;
 }
 
 
@@ -85,14 +90,25 @@ lineNumberList * merge( lineNumberList * list1, lineNumberList * list2 ){
     }
     list1->next = list2;
 
-    printf("Merge result\n");
-    list1 = result;
+    return result;
+}
+
+switchLineNumberList * createSwitchList( int lineNumber, int caseValue ){
+    switchLineNumberList * result = malloc( sizeof(switchLineNumberList) );
+    result->lineNumber = lineNumber;
+    result->caseValue = caseValue;
+    result->next = NULL;
+    return result;
+}
+
+switchLineNumberList * mergeSwitchList( switchLineNumberList * list1, switchLineNumberList * list2 ){
+    if ( list1 == NULL ) return list2;
+
+    switchLineNumberList * result =  list1;
     while (list1->next != NULL){
-        printf("%d\n", list1->lineNumber );
-        list1 = ( lineNumberList * ) list1->next;
+        list1 = ( switchLineNumberList * ) list1->next;
     }
-    printf("%d\n", list1->lineNumber );
-    printf("End of the Merge result\n");
+    list1->next = list2;
 
     return result;
 }

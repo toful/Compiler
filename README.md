@@ -171,6 +171,12 @@ For statement syntax:
         statement list
     done
 
+Do While statement syntax:
+
+    do
+        statement list
+    while boolean expression
+
 The range is defined as: ```arithmetic expression .. arithmetic expression```
 
 The identifier used in the for statement has to be an uninitialized variable.

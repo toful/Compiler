@@ -25,6 +25,13 @@ typedef struct
     void * next;
 } lineNumberList;
 
+typedef struct
+{
+    int lineNumber;
+    int caseValue;
+    void * next;
+} switchLineNumberList;
+
 typedef struct $
 {
     union {
@@ -40,6 +47,7 @@ typedef struct $
     lineNumberList * truelist;
     lineNumberList * falselist;
     lineNumberList * statementlist;
+    switchLineNumberList * switchlist;
 } variable;
 
 

@@ -160,7 +160,7 @@ TWO_POINTS  ":"
                     }
 
 {SPACE}             {}
-
+{TAB}             {}
 
 
 %%
