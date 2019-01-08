@@ -21,23 +21,23 @@ end
 
 //Checking the while statement
 while 5 > 2 or 2 < 4 do
-    a := true
-    b := false
+    a := 2 mod 4
 done
 
 //Cheking all if statements
 if not false then
-    d := (12 > 15) and false or 3 > 2
+    d := 5 * 4 / 2
 fi
+1
 
 if not (3 < 5) then
     x := 1
 else
     x := 2
 fi
+2
 
 total := 0.0
-
 if not (3 < 5) then
     x := 1
 elsif (3 < 5) then
@@ -49,6 +49,7 @@ elsif 4 > 3 then
 else
     x := 5
 fi
+total
 
 //checking the repeat statement
 repeat
@@ -71,7 +72,8 @@ while 5 < 3
 
 for i in 1..20 do
     j := 0
-    while j < i do
+    k := 10
+    while j < k do
         l := j mod 4
         switch l begin
             case 0 :

@@ -5,6 +5,7 @@
 ######################################################################*/
 
 #include "./operations.h"
+#include "./ThreeAddressCode.h"
 extern void yyerror( const char* );
 
 /*Arithmetic operations*/
@@ -540,32 +541,6 @@ char* pow_op_symbol( variable *result, variable x, variable y ){
     return "";
 }
 
-/*char * getRelationalOperatorSymbol( relationalOperator relOp ){
-    switch( relOp ){
-        case NE:
-            return "NE";
-        break;
-        case GE:
-            return "GE";
-        break;
-        case GT:
-            return "GT";
-        break;
-        case LE:
-            return "LE";
-        break;
-        case LT:
-            return "LT";
-        break;
-        case EQ:
-            return "EQ";
-        break;
-        default:
-            return "ERROR";
-        break;
-    }
-}*/
-
 int get_type_op( variable x, variable y ){
     if( x.type == REAL || y.type == REAL ){
         return REAL;
@@ -635,7 +610,6 @@ void write_instruction( char* instruction, variable r, variable x, variable y, c
     sprintf( instruction, "%s := %s %s %s", r.name, aux1, op, aux2 );
 }
 
-
 void write_instruction_short( char* instruction, variable r, variable x, char* op ){
     char* aux1;
 
@@ -646,4 +620,38 @@ void write_instruction_short( char* instruction, variable r, variable x, char* o
     else aux1 = valueToString( x );
 
     sprintf( instruction, "%s := %s %s", r.name, op, aux1 );
+}
+
+void pow_operation( variable * r, variable a, variable b ){
+    char instruction[ 30 ];
+    int tmp1, tmp2;
+    int aux;
+
+    tmp1 = getNextTemporal();
+    tmp2 = getNextTemporal();
+
+    sprintf( instruction, "$t%02d := %s", tmp1, getValue( a ) );
+    emit( instruction );
+    sprintf( instruction, "$t%02d := %d", tmp2, 1 );
+    emit( instruction );
+
+    aux = instructions.lineNumber;
+    sprintf( instruction, "IF $t%02d LTI %s GOTO %d", tmp2, getValue( b ), instructions.lineNumber + 2 );
+    emit( instruction );
+
+    sprintf( instruction, "GOTO %d", instructions.lineNumber +4 );
+    emit( instruction );
+
+    if( a.type == REAL ) sprintf(instruction, "$t%02d := $t%02d MULF %s", tmp1, tmp1, getValue( a ) );
+    else sprintf(instruction, "$t%02d := $t%02d MULI %s", tmp1, tmp1, getValue( a ) );
+    emit( instruction );
+
+    sprintf(instruction, "$t%02d := $t%02d ADDI %d", tmp2, tmp2, 1 );
+    emit( instruction );
+
+    sprintf( instruction, "GOTO %d", aux );
+    emit( instruction );
+
+    r->name = (char *) malloc( sizeof(char)* 4 );
+    sprintf( r->name, "$t%02d", tmp1 );
 }

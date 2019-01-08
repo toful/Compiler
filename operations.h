@@ -44,3 +44,4 @@ char * getRelationalOperatorSymbol( relationalOperator relOp, variableType type 
 void write_instruction( char* instruction, variable r, variable x, variable y, char* op );
 void write_instruction_short( char* instruction, variable r, variable x, char* op );
 
+void pow_operation( variable *r, variable a, variable b );

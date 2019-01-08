@@ -217,7 +217,7 @@ statement : general_expression LINE
         fprintf( yyout ,"EXPRESSION: (%s) %s\n", result_type, result_value );
     }
     else{
-        sprintf( instruction, "PARAM %s", $1.name );
+        sprintf( instruction, "PARAM %s", getValue($1) );
         emit( instruction );
 
         switch( $1.type ){
@@ -671,6 +671,8 @@ level3_expression_list : level3_expression_list POW level4_expression_list
     }
     else{
         if( type_op( &$$, $1, $3) ) yyerror( "SEMATIC ERROR: something happened in the DEF_TYPE operation" );
+        pow_operation( &$$, $1, $3 );
+        $$.id = 1;
     }
 };
 | SQRT OPEN_PARENTHESIS level4_expression_list CLOSE_PARENTHESIS 

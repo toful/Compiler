@@ -32,7 +32,7 @@ $ make clean
 
 ## Documentation
 
-This is a 0 version of the compiler, so it doesn't generate compiled code yet. By the moment it only reads the input file and recognises the control flow properly.
+This compiler generates a simple three address code. It works with Integers and Floats and all the iterative and conditional sentences specified below.
 
 ### Modes
 
@@ -81,6 +81,7 @@ statement list
 Statements can be such **arithmetic expressions**:
 
 They are formed by int, float or string literals, identifiers, arithmetic expressions between parenthesis, and the string concatenation operator (+) and the other arithmetic operators (+ , - , * , / , mod, ** , sqrt ) applied over other arithmetic expressions.
+The sqrt function is not suported by the compiler mode.
 
     i * (x + i) - i / 4.0
     17 + (3 * 1.0)
@@ -89,6 +90,7 @@ They are formed by int, float or string literals, identifiers, arithmetic expres
 **boolean expressions**:
 
 They are formed by boolean literals and identifiers, boolean operators applied over other boolean expressions and relational expressions applied over arithmetic expressions.
+Boolean expressions are only suported in conditional and iterative statements in the compiler mode.
 
     true
     b or not b
@@ -242,6 +244,25 @@ for index in 3..n do
     y := fib
     fib
 done
+```
+```
+calc off
+
+// nested sentences
+total := 0.0
+i := 1
+while total < 1000.0 do
+    if (i = 1) then
+        total := total * 2
+    else
+        total := total - 1
+    fi
+    i := -i
+    if total > 666.6 or total = 500.0 then
+        i := 1
+    fi
+done
+total
 ```
 
 ## Author
