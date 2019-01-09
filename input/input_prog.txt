@@ -19,7 +19,7 @@ x := 1
 x
 y := 1
 y
-for index in 3..n do
+for index in 3..(n+n*n) do
     fib := x + y
     x := y
     y := fib

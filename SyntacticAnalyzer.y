@@ -119,8 +119,6 @@
 %type <var> switch_statement
 %type <var> LINE
 
-%type <var> conditional_statement
-
 %type <var> P
 %type <var> Q
 
@@ -137,6 +135,9 @@
 /*grammar definition*/
 
 program : check_mode LINE statement_list{
+    complete( $3.statementlist, instructions.lineNumber );
+    sprintf( instruction, "HALT" );
+    emit( instruction );
     drop();
 };
 
@@ -158,10 +159,11 @@ emitGoTo : { $$.statementlist = createList( instructions.lineNumber );
             };
 
 
-statement_list : statement_list statement { $$.statementlist = createList( instructions.lineNumber );
-                                            $$.truelist = NULL;
-                                            $$.falselist = NULL; }
-                 | statement { $$.statementlist = createList( instructions.lineNumber );
+statement_list : statement_list getLine statement { complete( $1.statementlist, $2.line );
+                                                    $$.statementlist = $3.statementlist;
+                                                    $$.truelist = NULL;
+                                                    $$.falselist = NULL; }
+                 | statement { $$.statementlist = $1.statementlist;
                                $$.truelist = NULL;
                                $$.falselist = NULL; }
 
@@ -204,6 +206,9 @@ statement : IDENTIFIER ASSIGN general_expression LINE
             sprintf( error_message, "SEMANTIC ERROR: variable ( %s ) type ( %s ) is diferent from the expression type ( %s )", $1.stringValue, typeToString( $1.type ), result_type );
             yyerror( error_message );
         }
+        $$.statementlist = NULL;
+        $$.truelist = NULL;
+        $$.falselist = NULL;
     }
 };
 
@@ -233,17 +238,23 @@ statement : general_expression LINE
         }
         emit( instruction );
 
+        $$.statementlist = $1.statementlist;
+        $$.truelist = NULL;
+        $$.falselist = NULL;
+
         /*char * result_type = typeToString( $1.type );
         for( i=0; i < tab; i++ ) printf("\t");
         printf("(%s)\n", result_type );*/
     }
 };
 
-statement : conditional_statement getLine { complete( $1.statementlist, $2.line ); }
+statement : while_statement | if_statement | for_statement | repeat_statement | switch_statement | dowhile_statement
 
-conditional_statement : while_statement | if_statement | for_statement | repeat_statement | switch_statement | dowhile_statement
-
-statement : LINE
+statement : LINE {
+    $$.statementlist = NULL;
+    $$.truelist = NULL;
+    $$.falselist = NULL;
+}
 
 while_statement: WHILE init_while getLine level1_boolean_exp_list DO LINE getLine statement_list DONE LINE
 {
@@ -258,8 +269,7 @@ while_statement: WHILE init_while getLine level1_boolean_exp_list DO LINE getLin
 
         complete( $4.truelist, $7.line );
 
-        /*Useless?
-        complete( $8.statementlist, $3.line );*/
+        complete( $8.statementlist, $3.line );
         
         sprintf( instruction, "GOTO %d", $3.line );
         emit( instruction );

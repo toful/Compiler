@@ -37,7 +37,7 @@ else
 fi
 2
 
-total := 0.0
+total := 33333.0
 if not (3 < 5) then
     x := 1
 elsif (3 < 5) then

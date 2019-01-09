@@ -54,6 +54,7 @@ lineNumberList * createList( int lineNumber ){
 }
 
 void complete( lineNumberList * line, int pos ){
+    if (line == NULL) return;
     /*don't know wht sometimes some lines to complete are not written yet*/
     if( line->lineNumber >= instructions.lineNumber ) return;
     

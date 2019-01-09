@@ -7,10 +7,10 @@ while total < 1000.0 do
 	if (i = 1) then
 		total := total * 2
 	else
-		total := total - 1
+		total := total - 111 * total
 	fi
 	i := -i
-	if total > 666.6 or total = 500.0 then
+	if total > 666.6 or total = 500.0 and i = i+1 then
 		i := 1
 	fi
 done
